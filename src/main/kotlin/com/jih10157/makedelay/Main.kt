@@ -30,7 +30,8 @@ fun main() {
         ThreadHandler(client, server, delay).start()
     }
 }
-class ThreadHandler(private val client: Socket, private val server: Socket, private val delay: Int): Thread() {
+
+class ThreadHandler(private val client: Socket, private val server: Socket, private val delay: Int) : Thread() {
     private val clientQueue: Queue<ByteArray> = LinkedList()
     private val serverQueue: Queue<ByteArray> = LinkedList()
     private val clientTimeQueue: Queue<Long> = LinkedList()
@@ -44,10 +45,10 @@ class ThreadHandler(private val client: Socket, private val server: Socket, priv
 
         var csClosed = false
         var scClosed = false
-        var timeOut = System.currentTimeMillis()+ TIMEOUT
+        var timeOut = System.currentTimeMillis() + TIMEOUT
 
         while (true) {
-            if(timeOut <= System.currentTimeMillis()||csClosed||scClosed) {
+            if (timeOut <= System.currentTimeMillis() || csClosed || scClosed) {
                 serverInput.close()
                 serverOutput.close()
                 server.close()
@@ -56,52 +57,54 @@ class ThreadHandler(private val client: Socket, private val server: Socket, priv
                 client.close()
                 break
             }
-            if(server.isClosed&&client.isClosed) break
-            if(!csClosed) {
+            if (server.isClosed && client.isClosed) break
+            if (!csClosed) {
                 try {
                     val clientAvailable = clientInput.available()
-                    if(clientAvailable!=0) {
+                    if (clientAvailable != 0) {
                         val byteArray = ByteArray(clientAvailable)
                         clientInput.read(byteArray)
                         clientQueue.add(byteArray)
-                        clientTimeQueue.add(System.currentTimeMillis()+ delay)
-                        timeOut = System.currentTimeMillis()+ TIMEOUT
+                        clientTimeQueue.add(System.currentTimeMillis() + delay)
+                        timeOut = System.currentTimeMillis() + TIMEOUT
                     }
                 } catch (e: IOException) {
                     csClosed = true
                 }
             }
-            if(!scClosed) {
+            if (!scClosed) {
                 try {
                     val serverAvailable = serverInput.available()
-                    if(serverAvailable!=0) {
+                    if (serverAvailable != 0) {
                         val byteArray = ByteArray(serverAvailable)
                         serverInput.read(byteArray)
                         serverQueue.add(byteArray)
-                        serverTimeQueue.add(System.currentTimeMillis()+ delay)
-                        timeOut = System.currentTimeMillis()+ TIMEOUT
+                        serverTimeQueue.add(System.currentTimeMillis() + delay)
+                        timeOut = System.currentTimeMillis() + TIMEOUT
                     }
                 } catch (e: IOException) {
                     scClosed = true
                 }
             }
-            if(!csClosed && clientQueue.isNotEmpty() &&
-                clientTimeQueue.peek() <= System.currentTimeMillis()) {
+            if (!csClosed && clientQueue.isNotEmpty() &&
+                clientTimeQueue.peek() <= System.currentTimeMillis()
+            ) {
                 clientTimeQueue.poll()
                 try {
                     serverOutput.write(clientQueue.poll())
-                    timeOut = System.currentTimeMillis()+ TIMEOUT
+                    timeOut = System.currentTimeMillis() + TIMEOUT
                 } catch (e: SocketException) {
                     csClosed = true
                     clientInput.close()
                 }
             }
-            if(!scClosed && serverQueue.isNotEmpty() &&
-                serverTimeQueue.peek() <= System.currentTimeMillis()) {
+            if (!scClosed && serverQueue.isNotEmpty() &&
+                serverTimeQueue.peek() <= System.currentTimeMillis()
+            ) {
                 serverTimeQueue.poll()
                 try {
                     clientOutput.write(serverQueue.poll())
-                    timeOut = System.currentTimeMillis()+ TIMEOUT
+                    timeOut = System.currentTimeMillis() + TIMEOUT
                 } catch (e: SocketException) {
                     scClosed = true
                     serverInput.close()
